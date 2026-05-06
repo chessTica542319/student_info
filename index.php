@@ -4,22 +4,37 @@ include 'auth.php';
 
 include 'db.php';
 
-$sql = "SELECT id, f_name, m_name, l_name, gender, birthday, address, grade, course FROM student";
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$sql = "SELECT id, f_name, m_name, l_name, gender, birthday, address, gwa, course FROM student";
+if ($search) {
+    $search_param = '%' . $search . '%';
+    $sql .= " WHERE LOWER(f_name) LIKE LOWER(?) OR LOWER(m_name) LIKE LOWER(?) OR LOWER(l_name) LIKE LOWER(?) OR LOWER(course) LIKE LOWER(?) OR LOWER(address) LIKE LOWER(?)";
+}
+$sql .= " ORDER BY id DESC";
 
-// Get honor students (grade >= 90)
-$honor_sql = "SELECT id, f_name, m_name, l_name, gender, grade FROM student WHERE grade >= 90 ORDER BY grade DESC";
+// Get honor students (gwa >= 90)
+$honor_sql = "SELECT id, f_name, m_name, l_name, gender, gwa, course FROM student WHERE gwa >= 90 ORDER BY gwa DESC";
 $honor_result = $conn->query($honor_sql);
 
-// Get failed students (grade < 75)
-$fail_sql = "SELECT id, f_name, m_name, l_name, gender, grade FROM student WHERE grade < 75 ORDER BY grade ASC";
+// Get failed students (gwa < 75)
+$fail_sql = "SELECT id, f_name, m_name, l_name, gender, gwa FROM student WHERE gwa < 75 ORDER BY gwa ASC";
 $fail_result = $conn->query($fail_sql);
 
 try {
-    $result = $conn->query($sql);
+    if ($search) {
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssss", $search_param, $search_param, $search_param, $search_param, $search_param);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $result = $conn->query($sql);
+    }
     
     // Get gender counts for pie chart
     $male_count = 0;
     $female_count = 0;
+    $pass_count = 0;
+    $fail_count = 0;
     $total_students = $result->num_rows;
     
     if ($total_students > 0) {
@@ -31,6 +46,13 @@ try {
             } elseif ($row['gender'] == 'F') {
                 $female_count++;
             }
+            
+            // Count pass/fail based on GWA >= 75
+            if ($row['gwa'] >= 75) {
+                $pass_count++;
+            } else {
+                $fail_count++;
+            }
         }
         // Reset pointer again for table
         $result->data_seek(0);
@@ -39,6 +61,8 @@ try {
     // Calculate percentages
     $male_pct = $total_students > 0 ? round(($male_count / $total_students) * 100, 1) : 0;
     $female_pct = $total_students > 0 ? round(($female_count / $total_students) * 100, 1) : 0;
+    $pass_pct = $total_students > 0 ? round(($pass_count / $total_students) * 100, 1) : 0;
+    $fail_pct = $total_students > 0 ? round(($fail_count / $total_students) * 100, 1) : 0;
     
 } catch (Exception $e) {
     die("Error fetching data: " . $e->getMessage());
@@ -48,7 +72,9 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Student List - Neon Yellow Edition</title>
 <style>
@@ -86,19 +112,23 @@ body {
 
         .nav-link {
             display: block;
-            color: #94a3b8;
+            color: #d1fae5;
             padding: 14px 20px;
             text-decoration: none;
             border-radius: 10px;
             margin-bottom: 8px;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
 
+
         .nav-link:hover, .nav-link.active {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.2);
             color: #ffffff;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
         }
+
 
         /* Main Content */
         .main-content {
@@ -283,28 +313,22 @@ body {
             height: 100px;
             border-radius: 50%;
             background: conic-gradient(
-                #FF0000 0deg <?php echo $male_pct * 3.6; ?>deg,
-                #00FF00 <?php echo $male_pct * 3.6; ?>deg 360deg
+                #ef4444 0deg <?php echo $fail_pct * 3.6; ?>deg,
+                #22c55e <?php echo $fail_pct * 3.6; ?>deg 360deg
             );
             position: relative;
         }
 
-        .pie-chart::before {
-            content: '';
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: #ffffff;
+        .gender-pie-chart {
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            background: conic-gradient(
+                #ef4444 0deg <?php echo $male_pct * 3.6; ?>deg,
+                #22c55e <?php echo $male_pct * 3.6; ?>deg 360deg
+            );
+            position: relative;
         }
-
-        .pie-legend {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
         }
 
         .legend-item {
@@ -321,20 +345,10 @@ body {
             border-radius: 3px;
         }
 
-.legend-dot.male { background: #FF0000; }
-        .legend-dot.female { background: #00FF00; }
-
-        .legend-value {
-            color: #1e293b;
-            font-weight: 700;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #94a3b8;
-            font-size: 13px;
+        .legend-dot.fail { background: #ef4444; }
+        .legend-dot.pass { background: #22c55e; }
+        .legend-dot.male { background: #ef4444; }
+        .legend-dot.female { background: #22c55e; }
             margin-top: 30px;
         }
     </style>
@@ -356,9 +370,23 @@ body {
         <!-- Header -->
         <div class="header">
             <h2>Student Dashboard</h2>
-            <div class="user-info">
-                Welcome, <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong> | 
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <form action="" method="get" style="display: flex; gap: 10px; align-items: center;">
+                    <div style="position: relative; width: 300px;">
+                        <input type="text" id="searchInput" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($search); ?>" style="padding: 12px 40px 12px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box;">
+                        <i class="fas fa-search" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; pointer-events: none;"></i>
+                    </div>
+
+                    <button type="submit" id="searchBtn" style="padding: 12px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Search</button>
+                    <?php if ($search): ?>
+                    <a href="index.php" style="padding: 12px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Clear</a>
+                    <?php endif; ?>
+                </form>
+
+                <div class="user-info">
+                    Welcome, <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong> | 
 <a href="logout.php" style="color: #ef4444; text-decoration: none;" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+                </div>
             </div>
         </div>
 
@@ -369,13 +397,27 @@ body {
                 <div class="value"><?php echo $result->num_rows; ?></div>
             </div>
             <div class="stat-card">
-                <h3>Active Records</h3>
-                <div class="value"><?php echo $result->num_rows; ?></div>
+                <h3>Pass/Fail Distribution</h3>
+                <div class="chart-container">
+                    <div class="pie-chart"></div>
+                    <div class="pie-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot fail"></span>
+                            <span>Fail</span>
+                            <span class="legend-value"><?php echo $fail_pct; ?>%</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot pass"></span>
+                            <span>Pass</span>
+                            <span class="legend-value"><?php echo $pass_pct; ?>%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="stat-card">
                 <h3>Gender Distribution</h3>
                 <div class="chart-container">
-                    <div class="pie-chart"></div>
+                    <div class="gender-pie-chart"></div>
                     <div class="pie-legend">
                         <div class="legend-item">
                             <span class="legend-dot male"></span>
@@ -408,7 +450,7 @@ body {
                         <th>Gender</th>
                         <th>Birthday</th>
                         <th>Address</th>
-<th>Grade</th>
+<th>GWA</th>
                         <th>Course</th>
                         <th>Action</th>
                     </tr>
@@ -417,9 +459,9 @@ body {
                     <?php
 if ($result->num_rows > 0) {
                         while($row = $result->fetch_assoc()) {
-                            $grade = intval($row['grade']);
+$gwa = isset($row['gwa']) ? (float)$row['gwa'] : 0;
                             $status_class = "";
-                            if ($grade < 75) {
+                            if ($gwa < 75) {
                                 $status_class = "style='color: #ef4444; font-weight: 600;'";
                             }
                             echo "<tr>";
@@ -430,7 +472,7 @@ if ($result->num_rows > 0) {
                             echo "<td>" . htmlspecialchars($row['gender']) . "</td>";
                             echo "<td>" . htmlspecialchars($row['birthday']) . "</td>";
                             echo "<td>" . htmlspecialchars($row['address']) . "</td>";
-echo "<td $status_class>" . $grade . ($grade < 75 ? " (Fail)" : "") . "</td>";
+echo "<td $status_class>" . number_format($gwa, 2) . ($gwa < 75 ? " (Fail)" : "") . "</td>";
                             echo "<td>" . htmlspecialchars($row['course']) . "</td>";
                             echo "<td>
                                     <a href='update_student.php?id=" . $row['id'] . "' class='btn-update'>Edit</a>
@@ -439,7 +481,7 @@ echo "<td $status_class>" . $grade . ($grade < 75 ? " (Fail)" : "") . "</td>";
                             echo "</tr>";
                         }
                     } else {
-echo "<tr><td colspan='9' class='text-center'>No student records found.</td></tr>";
+echo "<tr><td colspan='10' class='text-center'>No student records found.</td></tr>";
                     }
                     ?>
                 </tbody>

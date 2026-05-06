@@ -22,7 +22,7 @@ try {
     // 6. Set Character Encoding to support all standard text/symbols
     $conn->set_charset("utf8mb4"); 
 
-// 7. Create the `student` table automatically if it doesn't exist
+    // 7. Create the `student` table automatically if it doesn't exist
     // It includes your 7 columns with 'id' as a unique, not null, auto-incrementing primary key.
 $sql_create_table = "CREATE TABLE IF NOT EXISTS `student` (
         `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -32,18 +32,31 @@ $sql_create_table = "CREATE TABLE IF NOT EXISTS `student` (
         `gender` CHAR(1) NOT NULL,
         `birthday` DATE NOT NULL,
         `address` VARCHAR(255) NOT NULL,
-        `grade` INT NOT NULL DEFAULT 0,
+        `gwa` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
         `course` VARCHAR(255) NOT NULL DEFAULT ''
     )";
     $conn->query($sql_create_table);
     
-// 8. Add missing columns to existing tables if they don't exist
+// 8. Migrate grade column to gwa if it exists (for existing databases)
     $result = @$conn->query("DESCRIBE student");
     if ($result) {
         $columns = [];
         while ($row = $result->fetch_assoc()) {
             $columns[] = $row['Field'];
         }
+        
+        // Migrate grade column to gwa if needed
+        if (in_array('grade', $columns) && !in_array('gwa', $columns)) {
+            try {
+                @$conn->query("ALTER TABLE student ADD COLUMN `gwa` DECIMAL(5,2) NOT NULL DEFAULT 0.00");
+                @$conn->query("UPDATE student SET gwa = CAST(grade AS DECIMAL(5,2))");
+                @$conn->query("ALTER TABLE student DROP COLUMN grade");
+            } catch (Exception $e) {
+                // Silent fail - table might be in use
+            }
+        }
+    
+// 9. Add missing columns to existing tables if they don't exist
         
         // Add each missing column individually with error handling
         if (!in_array('gender', $columns)) {

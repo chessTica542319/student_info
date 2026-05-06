@@ -4,8 +4,8 @@ include 'auth.php';
 
 include 'db.php';
 
-// Get failed students (grade < 75)
-$fail_sql = "SELECT id, f_name, m_name, l_name, gender, grade FROM student WHERE grade < 75 ORDER BY grade ASC";
+// Get failed students (gwa < 75)
+$fail_sql = "SELECT id, f_name, m_name, l_name, gender, gwa, course FROM student WHERE gwa < 75 ORDER BY gwa ASC";
 $fail_result = $conn->query($fail_sql);
 
 try {
@@ -28,7 +28,8 @@ try {
         
         .sidebar { width: 260px; background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%); min-height: 100vh; position: fixed; padding: 30px 20px; left: 0; top: 0; }
         .logo { color: #ffffff; font-size: 24px; font-weight: 700; margin-bottom: 40px; text-align: center; }
-        .nav-link { display: block; color: #fca5a5; padding: 14px 20px; text-decoration: none; border-radius: 10px; margin-bottom: 8px; font-weight: 500; transition: all 0.3s ease; }
+        .nav-link { display: block; color: #fecaca; padding: 14px 20px; text-decoration: none; border-radius: 10px; margin-bottom: 8px; font-weight: 600; transition: all 0.3s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.2); color: #ffffff; }
         
         .main-content { margin-left: 260px; padding: 30px; }
@@ -73,7 +74,7 @@ try {
         </div>
 
         <div class="stat-card">
-            <h3>Total Failed Students (Grade < 75)</h3>
+<h3>Total Failed Students (GWA < 75)
             <div class="value"><?php echo $total_fail; ?></div>
         </div>
 
@@ -89,7 +90,8 @@ try {
                         <th>Middle Name</th>
                         <th>Last Name</th>
                         <th>Gender</th>
-                        <th>Grade</th>
+<th>GWA</th>
+                        <th>Course</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,11 +104,12 @@ try {
                             echo "<td>" . htmlspecialchars($row['m_name']) . "</td>";
                             echo "<td>" . htmlspecialchars($row['l_name']) . "</td>";
                             echo "<td>" . htmlspecialchars($row['gender']) . "</td>";
-                            echo "<td><span class='grade-badge'>" . intval($row['grade']) . "</span></td>";
+echo "<td><span class='grade-badge'>" . number_format((float)$row['gwa'], 2) . "</span></td>";
+                            echo "<td>" . htmlspecialchars($row['course']) . "</td>";
                             echo "</tr>";
                         }
                     } else {
-                        echo "<tr><td colspan='6' class='text-center'>No failed students found.</td></tr>";
+                        echo "<tr><td colspan='7' class='text-center'>No failed students found.</td></tr>";
                     }
                     ?>
                 </tbody>

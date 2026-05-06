@@ -1,4 +1,4 @@
-<?php
+    <?php
 // Login page with hardcoded credentials
 // Start fresh session - destroy any existing one first
 if (session_status() === PHP_SESSION_ACTIVE) {
@@ -45,10 +45,11 @@ if (isset($_POST['login'])) {
 
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - Neon Edition</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://kit.fontawesome.com/3131841332.js" crossorigin="anonymous"></script>
+        <title>Login - Neon Edition</title>
 <style>
         /* SaaS Dashboard Theme */
         * {
@@ -201,10 +202,45 @@ input[type="text"]:focus, input[type="password"]:focus {
                     <label>Username</label>
                     <input type="text" required name="username" placeholder="Enter username">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                     <label>Password</label>
-                    <input type="password" required name="password" placeholder="Enter password">
+                    <input type="password" required name="password" id="password" placeholder="Enter password" style="padding-right: 45px;">
+                    <i class="toggle-password fas fa-eye" id="toggleIcon" onclick="togglePassword()" style="
+                        position: absolute;
+                        right: 15px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        cursor: pointer;
+                        color: #a0aec0;
+                        font-size: 18px;
+                        user-select: none;
+                        opacity: 0;
+                        transition: opacity 0.2s ease;
+                    "></i>
                 </div>
+                <script>
+                function togglePassword() {
+                    const passwordInput = document.getElementById('password');
+                    const toggleIcon = document.getElementById('toggleIcon');
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        toggleIcon.className = 'toggle-password fas fa-eye-slash';
+                    } else {
+                        passwordInput.type = 'password';
+                        toggleIcon.className = 'toggle-password fas fa-eye';
+                    }
+                }
+
+                // Show icon when password has text
+                document.getElementById('password').addEventListener('input', function() {
+                    const toggleIcon = document.getElementById('toggleIcon');
+                    if (this.value.length > 0) {
+                        toggleIcon.style.opacity = '1';
+                    } else {
+                        toggleIcon.style.opacity = '0';
+                    }
+                });
+                </script>
                 
                 <?php echo $error; ?>
                 

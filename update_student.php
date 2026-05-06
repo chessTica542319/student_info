@@ -33,23 +33,36 @@ if (isset($_POST['update'])) {
     $gender  = strtoupper($_POST['gender']);
     $bday    = $_POST['bday'];
     $address = ucwords(strtolower($_POST['address']));
-$grade   = intval($_POST['grade']);
+$grade = (float)$_POST['grade'];
+    $grade = round($grade, 2);
     $course  = $_POST['course'];
     
     // Validate grade
     if ($grade < 0) $grade = 0;
     if ($grade > 100) $grade = 100;
 
-    // Validate course is exactly 4 letters
-    if (strlen($course) !== 4) {
-        $message = "<div class='popup error'>Error: Course must be exactly 4 letters!</div>";
+    // New course logic: letters/spaces only, format before save
+    $course = trim($course);
+    if (!preg_match('/^[a-zA-Z\s]+$/', $course) || strlen($course) < 2 || strlen($course) > 50) {
+        $message = "<div class='popup error'>Error: Course 2-50 letters/spaces only!</div>";
     } else {
-$sql = "UPDATE student SET f_name=?, m_name=?, l_name=?, gender=?, birthday=?, address=?, grade=?, course=? WHERE id=?";
+        // Format course: preserve logic + new: multi-word always CAPS first + camelCase rest
+        $words = preg_split('/\s+/', $course);
+        if (count($words) === 1) {
+            $course = strtoupper($course); // Single word ALL CAPS: "bsit" → "BSIT"
+        } else {
+            $words[0] = strtoupper($words[0]); // First word always CAPS
+            for ($i = 1; $i < count($words); $i++) {
+                $words[$i] = ucfirst(strtolower($words[$i])); // Rest camelCase
+            }
+            $course = implode(' ', $words); // e.g. "bs computer" → "BS Computer", "Bachelor science" → "BACHELOR Science"
+        }
+$sql = "UPDATE student SET f_name=?, m_name=?, l_name=?, gender=?, birthday=?, address=?, gwa=?, course=? WHERE id=?";
 
         try {
             $stmt = $conn->prepare($sql);
-            // "ssssssisi" means 7 Strings and 1 Integer (the ID), plus grade and course
-            $stmt->bind_param("ssssssisi", $fname, $mname, $lname, $gender, $bday, $address, $grade, $course, $id);
+            // "ssssssdsi" means 6 strings, 1 double, 1 string, and 1 integer
+            $stmt->bind_param("ssssssdsi", $fname, $mname, $lname, $gender, $bday, $address, $grade, $course, $id);
             
             if ($stmt->execute()) {
                 header("Location: index.php");
@@ -60,16 +73,17 @@ $sql = "UPDATE student SET f_name=?, m_name=?, l_name=?, gender=?, birthday=?, a
             $message = "<div class='popup error'>System Error: " . $e->getMessage() . "</div>";
         }
     }
-    } // end else for course validation
+     // end else for course validation
 }
 ?>
 
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Update Student - SaaS Dashboard</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://kit.fontawesome.com/3131841332.js" crossorigin="anonymous"></script>
+        <title>Update Student - SaaS Dashboard</title>
 <style>
         /* SaaS Dashboard Theme */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -111,22 +125,22 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
     </style>
     <script>
         document.querySelector('form').addEventListener('submit', function(e) {
-            var gradeInput = document.getElementById('grade');
-            var grade = parseInt(gradeInput.value);
+            var gwaInput = document.getElementById('grade');
+var gwa = parseFloat(gwaInput.value);
             var errorDiv = document.getElementById('gradeError');
             
-            if (grade < 0 || grade > 100 || isNaN(grade)) {
+            if (gwa < 0 || gwa > 100 || isNaN(gwa)) {
                 e.preventDefault();
-                gradeInput.style.borderColor = '#ef4444';
-                gradeInput.style.backgroundColor = '#fef2f2';
-                errorDiv.textContent = 'Error: Grade must be between 0 and 100 only!';
+                gwaInput.style.borderColor = '#ef4444';
+                gwaInput.style.backgroundColor = '#fef2f2';
+                errorDiv.textContent = 'Error: GWA must be between 0 and 100!';
                 errorDiv.style.display = 'block';
-                gradeInput.value = '';
-                gradeInput.focus();
+                gwaInput.value = '';
+                gwaInput.focus();
                 setTimeout(function() {
                     errorDiv.style.display = 'none';
-                    gradeInput.style.borderColor = '#e2e8f0';
-                    gradeInput.style.backgroundColor = '#f7fafc';
+                    gwaInput.style.borderColor = '#e2e8f0';
+                    gwaInput.style.backgroundColor = '#f7fafc';
                 }, 2000);
             }
         });
@@ -185,9 +199,9 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
 <input type="text" required name="address" value="<?php echo htmlspecialchars($row['address']); ?>">
                 </div>
 <div class="form-group">
-                    <label>Grade (0-100)</label>
-                    <input type="number" required name="grade" id="grade" min="0" max="100" value="<?php echo intval($row['grade']); ?>" placeholder="Enter grade 0-100">
-                    <small style="color: #64748b;">Grade: 0 = Fail, 75 = Pass, 90+ = Honor</small>
+                    <label>GWA (0-100)</label>
+<input type="number" id="grade" required name="grade" value="<?php echo htmlspecialchars($row['gwa']); ?>" step="0.01" min="0" max="100">
+                    <small style="color: #64748b;">GWA: 0 = Fail, 75 = Pass, 90+ = Honor</small>
                 </div>
                 <div class="form-group">
                     <label>Course</label>

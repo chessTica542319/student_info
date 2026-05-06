@@ -15,28 +15,41 @@ if (isset($_POST['submit'])){
     $gender  = strtoupper($_POST['gender']);
     $bday    = $_POST['bday'];
     $address = ucwords(strtolower($_POST['address']));
-    $grade   = intval($_POST['grade']);
+    $gwa = (float)$_POST['gwa'];
+    $gwa = round($gwa, 2);
     $course  = $_POST['course'];
     
-    // Validate grade is between 0 and 100
-    if ($grade < 0) $grade = 0;
-    if ($grade > 100) $grade = 100;
+    // Validate GWA is between 0 and 100
+    if ($gwa < 0) $gwa = 0;
+    if ($gwa > 100) $gwa = 100;
 
-    // Validate course is exactly 4 letters
-    if (strlen($course) !== 4) {
-        $message = "<div class='popup error'>Error: Course must be exactly 4 letters!</div>";
+    // New course logic: letters/spaces only, format before save
+    $course = trim($course);
+    if (!preg_match('/^[a-zA-Z\s]+$/', $course) || strlen($course) < 2 || strlen($course) > 50) {
+        $message = "<div class='popup error'>Error: Course 2-50 letters/spaces only!</div>";
     } else {
+        // Format course: preserve logic + new: multi-word always CAPS first + camelCase rest
+        $words = preg_split('/\s+/', $course);
+        if (count($words) === 1) {
+            $course = strtoupper($course); // Single word ALL CAPS: "bsit" → "BSIT"
+        } else {
+            $words[0] = strtoupper($words[0]); // First word always CAPS
+            for ($i = 1; $i < count($words); $i++) {
+                $words[$i] = ucfirst(strtolower($words[$i])); // Rest camelCase
+            }
+            $course = implode(' ', $words); // e.g. "bs computer" → "BS Computer", "Bachelor science" → "BACHELOR Science"
+        }
         // Setup the prepared statement with placeholders
-        // 8 columns: f_name, m_name, l_name, gender, birthday, address, grade, course
-        $sql = "INSERT INTO student (f_name, m_name, l_name, gender, birthday, address, grade, course) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // 8 columns: f_name, m_name, l_name, gender, birthday, address, gwa, course
+        $sql = "INSERT INTO student (f_name, m_name, l_name, gender, birthday, address, gwa, course) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-try {
+        try {
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
                 throw new Exception("Prepare failed: " . $conn->error);
             }
-            // 7 strings (s) + 1 integer (i) = 8 parameters
-            $bind_result = $stmt->bind_param("sssssssi", $fname, $mname, $lname, $gender, $bday, $address, $grade, $course);
+            // 7 strings (s) + 1 double (d) = 8 parameters
+            $bind_result = $stmt->bind_param("ssssssds", $fname, $mname, $lname, $gender, $bday, $address, $gwa, $course);
             if (!$bind_result) {
                 throw new Exception("Bind failed: " . $stmt->error);
             }
@@ -68,10 +81,11 @@ $execute_result = $stmt->execute();
 
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Add Student - Neon Edition</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://kit.fontawesome.com/3131841332.js" crossorigin="anonymous"></script>
+        <title>Add Student - Neon Edition</title>
 <style>
         /* SaaS Dashboard Theme */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -114,22 +128,22 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
     </style>
     <script>
         document.querySelector('form').addEventListener('submit', function(e) {
-            var gradeInput = document.getElementById('grade');
-            var grade = parseInt(gradeInput.value);
-            var errorDiv = document.getElementById('gradeError');
+            var gwaInput = document.getElementById('gwa');
+            var gwa = parseFloat(gwaInput.value);
+            var errorDiv = document.getElementById('gwaError');
             
-            if (grade < 0 || grade > 100 || isNaN(grade)) {
+            if (gwa < 0 || gwa > 100 || isNaN(gwa)) {
                 e.preventDefault();
-                gradeInput.style.borderColor = '#ef4444';
-                gradeInput.style.backgroundColor = '#fef2f2';
-                errorDiv.textContent = 'Error: Grade must be between 0 and 100 only!';
+                gwaInput.style.borderColor = '#ef4444';
+                gwaInput.style.backgroundColor = '#fef2f2';
+                errorDiv.textContent = 'Error: GWA must be between 0 and 100!';
                 errorDiv.style.display = 'block';
-                gradeInput.value = '';
-                gradeInput.focus();
+                gwaInput.value = '';
+                gwaInput.focus();
                 setTimeout(function() {
                     errorDiv.style.display = 'none';
-                    gradeInput.style.borderColor = '#e2e8f0';
-                    gradeInput.style.backgroundColor = '#f7fafc';
+                    gwaInput.style.borderColor = '#e2e8f0';
+                    gwaInput.style.backgroundColor = '#f7fafc';
                 }, 2000);
             }
         });
@@ -187,16 +201,16 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
 <input type="text" required name="address">
                 </div>
 <div class="form-group">
-                    <label>Grade (0-100)</label>
-<input type="number" required name="grade" id="grade" min="0" max="100" value="0" placeholder="Enter grade 0-100">
-                    <small style="color: #64748b;">Grade: 0 = Fail, 75 = Pass, 90+ = Honor</small>
+                    <label>GWA (0-100)</label>
+<input type="number" required name="gwa" id="gwa" min="0" max="100" step="0.01" value="0" placeholder="Enter GWA 0-100">
+                    <small style="color: #64748b;">GWA: 0 = Fail, 75 = Pass, 90+ = Honor</small>
                 </div>
                 <div class="form-group">
                     <label>Course</label>
 <input type="text" required name="course" placeholder="Enter course">
                 </div>
                 
-                <div id="gradeError" class="grade-error"></div>
+                <div id="gwaError" class="grade-error"></div>
                 <?php echo $message; ?>
                 
                 <button type="submit" name="submit">Add Student</button>
