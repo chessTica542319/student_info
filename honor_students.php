@@ -209,7 +209,7 @@ echo "<tr><td>".$row['id']."</td><td>".$row['f_name']."</td><td>".$row['m_name']
             <h3 style="text-align:center;color:#1e293b;margin-bottom:20px;font-size:22px;">Certificate Preview</h3>
             <div class="cert-preview" id="certPreview"><div class="loading">📄 Clean Export Ready</div></div>
             <div class="btn-group">
-                <button class="btn-download" onclick="downloadPNG()">⬇️ Download PNG</button>
+                <button class="btn-download" onclick="downloadPNG()">Download PNG</button>
                 <button class="btn-close" onclick="hideCert()">Close</button>
             </div>
         </div>
