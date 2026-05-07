@@ -8,7 +8,29 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $sql = "SELECT id, f_name, m_name, l_name, gender, birthday, address, gwa, course FROM student";
 if ($search) {
     $search_param = '%' . $search . '%';
-    $sql .= " WHERE LOWER(f_name) LIKE LOWER(?) OR LOWER(m_name) LIKE LOWER(?) OR LOWER(l_name) LIKE LOWER(?) OR LOWER(course) LIKE LOWER(?) OR LOWER(address) LIKE LOWER(?)";
+    $search_words = array_filter(preg_split('/\s+/', $search), function($word) {
+        return $word !== '';
+    });
+
+    $sql .= " WHERE (LOWER(f_name) LIKE LOWER(?) "
+          . "OR LOWER(m_name) LIKE LOWER(?) "
+          . "OR LOWER(l_name) LIKE LOWER(?) "
+          . "OR LOWER(CONCAT_WS(' ', f_name, m_name)) LIKE LOWER(?) "
+          . "OR LOWER(CONCAT_WS(' ', l_name, m_name)) LIKE LOWER(?) "
+          . "OR LOWER(CONCAT_WS(' ', l_name, f_name)) LIKE LOWER(?) "
+          . "OR LOWER(CONCAT_WS(' ', f_name, m_name, l_name)) LIKE LOWER(?) "
+          . "OR LOWER(CONCAT_WS(' ', l_name, m_name, f_name)) LIKE LOWER(?) "
+          . "OR LOWER(course) LIKE LOWER(?) "
+          . "OR LOWER(address) LIKE LOWER(?) "
+          . "OR CAST(gwa AS CHAR) LIKE ?)";
+
+    if (count($search_words) > 1) {
+        $token_clauses = [];
+        foreach ($search_words as $word) {
+            $token_clauses[] = "(LOWER(f_name) LIKE LOWER(?) OR LOWER(m_name) LIKE LOWER(?) OR LOWER(l_name) LIKE LOWER(?))";
+        }
+        $sql .= " OR (" . implode(' AND ', $token_clauses) . ")";
+    }
 }
 $sql .= " ORDER BY id DESC";
 
@@ -23,7 +45,24 @@ $fail_result = $conn->query($fail_sql);
 try {
     if ($search) {
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssss", $search_param, $search_param, $search_param, $search_param, $search_param);
+
+        $params = array_fill(0, 11, $search_param);
+        if (count($search_words) > 1) {
+            foreach ($search_words as $word) {
+                $params[] = '%' . $word . '%';
+                $params[] = '%' . $word . '%';
+                $params[] = '%' . $word . '%';
+            }
+        }
+
+        $types = str_repeat('s', count($params));
+        $bindParams = array_merge([$types], $params);
+        $bindRefs = [];
+        foreach ($bindParams as $key => $value) {
+            $bindRefs[$key] = &$bindParams[$key];
+        }
+
+        call_user_func_array([$stmt, 'bind_param'], $bindRefs);
         $stmt->execute();
         $result = $stmt->get_result();
     } else {

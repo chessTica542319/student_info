@@ -212,7 +212,7 @@ echo "<tr><td>".$row['id']."</td><td>".$row['f_name']."</td><td>".$row['m_name']
                 <button class="btn-download" onclick="downloadPNG()">Download PNG</button>
                 <button class="btn-close" onclick="hideCert()">Close</button>
             </div>
-        </div>
+        </div>git 
     </div>
 
     <script>
