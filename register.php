@@ -59,7 +59,7 @@ if (isset($_POST['register'])) {
 
                 if ($ins->execute()) {
                 // After successful registration, go to login page so the user can sign in.
-                header("Location: login.php");
+                header("Location: index.php");
                 exit();
             } else {
                 $error = "<div class='popup error'>Error: Registration failed.</div>";
@@ -232,7 +232,7 @@ if (isset($_POST['register'])) {
 
                 <button type="submit" name="register">Register</button>
 
-                <div class="form-footer">Already have an accout and <a href="login.php">Login</a></div>
+                <div class="form-footer">Already have an accout and <a href="index.php">Login</a></div>
             </form>
         </div>
 

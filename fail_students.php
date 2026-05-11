@@ -1,4 +1,4 @@
-<?php
+m<?php
 // Protect this page - require authentication
 include 'auth.php';
 
@@ -60,7 +60,7 @@ try {
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">Student<br>Management</div>
-        <a href="index.php" class="nav-link">Dashboard</a>
+<a href="dashboard.php" class="nav-link">Dashboard</a>
         <a href="add_student.php" class="nav-link">Add Student</a>
         <a href="honor_students.php" class="nav-link">Honor Students</a>
         <a href="fail_students.php" class="nav-link active">Failed Students</a>

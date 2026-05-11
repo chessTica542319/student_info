@@ -17,8 +17,8 @@ if (isset($_GET['id'])) {
         $stmt->bind_param("i", $id);
         
         if ($stmt->execute()) {
-            // Redirect back to index on success
-            header("Location: index.php");
+            // Redirect back to dashboard on success
+            header("Location: dashboard.php");
             exit();
         }
         $stmt->close();
@@ -26,8 +26,8 @@ if (isset($_GET['id'])) {
         die("Error deleting record: " . $e->getMessage());
     }
 } else {
-    // If no ID is provided, just send them back to index
-    header("Location: index.php");
+    // If no ID is provided, just send them back to dashboard
+    header("Location: dashboard.php");
     exit();
 }
 ?>

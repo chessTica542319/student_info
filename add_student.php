@@ -61,12 +61,11 @@ $execute_result = $stmt->execute();
             
             // Check if row was actually inserted
             if ($stmt->affected_rows > 0) {
-                // Success! Close the statement and show success message
+                // Success! Close the statement and do a clean redirect
                 $stmt->close();
-                $message = "<div class='popup success'>Student added successfully! Redirecting...</div>";
-                echo $message;
-                // Small delay before redirect
-                header("Refresh: 1; URL=index.php");
+                // Avoid echoing output + JS redirect (causes flicker/"1 second" behavior)
+                header("Location: dashboard.php");
+                exit;
             } else {
                 throw new Exception("No rows were inserted.");
             }
@@ -154,7 +153,7 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
 <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">Student<br>Management</div>
-        <a href="index.php" class="nav-link">Dashboard</a>
+<a href="dashboard.php" class="nav-link">Dashboard</a>
         <a href="add_student.php" class="nav-link active">Add Student</a>
         <a href="honor_students.php" class="nav-link">Honor Students</a>
         <a href="fail_students.php" class="nav-link">Failed Students</a>
@@ -216,7 +215,7 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
                 <?php echo $message; ?>
                 
                 <button type="submit" name="submit">Add Student</button>
-                <a href="index.php" class="btn-cancel">Cancel</a>
+<a href="dashboard.php" class="btn-cancel">Cancel</a>
             </form>
         </div>
 

@@ -1,8 +1,6 @@
-n TODO (Student Info)
+# Task TODO - Fix add_student redirect + transition and error capture
 
-- [x] Add required `current_password` field to profile password change.
-- [x] Enforce current password verification before changing password.
-- [x] Add current password requirement for changing username as well (same field + same verification).
-- [x] Update UI so current-password field is shown in password/username flows (both forms now require it).
-
+- [ ] Update `add_student.php` so successful insert does a clean redirect to `dashboard.php` (use `header()` + `exit`) and avoid JS redirect after output.
+- [ ] (Optional) Implement a flash message via `$_SESSION['flash']` and show it on `dashboard.php` after redirect.
+- [ ] Retest: submit add student with valid/invalid inputs and confirm no 1-second error/flicker; confirm redirect works.
 

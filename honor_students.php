@@ -159,7 +159,7 @@ if ($search_active && $total_honor === 0) {
 
     <div class="sidebar">
         <div class="logo">Student<br>Management</div>
-        <a href="index.php" class="nav-link">Dashboard</a>
+<a href="dashboard.php" class="nav-link">Dashboard</a>
         <a href="add_student.php" class="nav-link">Add Student</a>
         <a href="honor_students.php" class="nav-link active">Honor Students</a>
         <a href="fail_students.php" class="nav-link">Failed Students</a>

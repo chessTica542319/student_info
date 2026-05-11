@@ -334,7 +334,7 @@ if (isset($_POST['delete_account'])) {
 <body>
     <div class="sidebar">
         <div class="logo">Student<br>Management</div>
-        <a href="index.php" class="nav-link">Dashboard</a>
+<a href="dashboard.php" class="nav-link">Dashboard</a>
         <a href="add_student.php" class="nav-link">Add Student</a>
         <a href="honor_students.php" class="nav-link">Honor Students</a>
         <a href="fail_students.php" class="nav-link">Failed Students</a>
@@ -423,10 +423,11 @@ if (isset($_POST['delete_account'])) {
                         <div class="form-group" style="margin-top: 20px;">
                             <label style="color:#c53030; font-size:15px;">Delete Account (requires confirmation)</label>
                             <div class="hint" style="margin-top: 4px; color:#64748b; font-size:13px;">
-                                Step 1: Enter your username and password.
+                                Step 1: Enter your username and password, then click <b>Delete Account</b> to verify your account.
                                 <br>
-                                Step 2: After verification message, submit again to permanently delete your account.
+                                Step 2: After you see the verification message, click <b>Delete Account</b> again to permanently delete it.
                             </div>
+
                         </div>
 
                         <input type="hidden" name="delete_step" value="1" id="delete_step_input">

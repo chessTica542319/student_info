@@ -65,7 +65,7 @@ $sql = "UPDATE student SET f_name=?, m_name=?, l_name=?, gender=?, birthday=?, a
             $stmt->bind_param("ssssssdsi", $fname, $mname, $lname, $gender, $bday, $address, $grade, $course, $id);
             
             if ($stmt->execute()) {
-                header("Location: index.php");
+header("Location: dashboard.php");
                 exit();
             }
             $stmt->close();
@@ -151,7 +151,7 @@ var gwa = parseFloat(gwaInput.value);
 <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">Student<br>Management</div>
-        <a href="index.php" class="nav-link">Dashboard</a>
+<a href="dashboard.php" class="nav-link">Dashboard</a>
         <a href="add_student.php" class="nav-link">Add Student</a>
         <a href="honor_students.php" class="nav-link">Honor Students</a>
         <a href="fail_students.php" class="nav-link">Failed Students</a>
@@ -214,7 +214,7 @@ var gwa = parseFloat(gwaInput.value);
                 <?php echo $message; ?>
                 
                 <button type="submit" name="update">Update Student</button>
-                <a href="index.php" class="btn-cancel">Cancel</a>
+<a href="dashboard.php" class="btn-cancel">Cancel</a>
             </form>
         </div>
 
