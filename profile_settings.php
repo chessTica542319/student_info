@@ -320,6 +320,15 @@ if (isset($_POST['delete_account'])) {
         }
         .toggle-password:focus { outline: none; }
 
+        .password-strength {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            display: none;
+            text-align: left;
+            color: #991b1b;
+        }
+
     </style>
 </head>
 <body>
@@ -388,6 +397,7 @@ if (isset($_POST['delete_account'])) {
                                 <input type="password" name="new_password" placeholder="Enter new password" required id="pw-new">
                                 <span class="toggle-password" data-pw-toggle="pw-new" aria-label="Show/Hide password">👁️</span>
                             </div>
+                            <div id="pw-new-strength" class="password-strength" aria-live="polite">Weak password</div>
                         </div>
 
                         <div class="form-group">
@@ -499,21 +509,75 @@ if (isset($_POST['delete_account'])) {
 <script>
     (function () {
         const toggles = document.querySelectorAll('[data-pw-toggle]');
-        if (!toggles || toggles.length === 0) return;
+        if (toggles && toggles.length > 0) {
+            toggles.forEach(function (toggle) {
+                const id = toggle.getAttribute('data-pw-toggle');
+                if (!id) return;
 
-        toggles.forEach(function (toggle) {
-            const id = toggle.getAttribute('data-pw-toggle');
-            if (!id) return;
+                const input = document.getElementById(id);
+                if (!input) return;
 
-            const input = document.getElementById(id);
-            if (!input) return;
-
-            toggle.addEventListener('click', function () {
-                const isPassword = input.type === 'password';
-                input.type = isPassword ? 'text' : 'password';
-                toggle.textContent = isPassword ? '🙈' : '👁️';
+                toggle.addEventListener('click', function () {
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    toggle.textContent = isPassword ? '🙈' : '👁️';
+                });
             });
-        });
+        }
+
+        // Password strength indicator for Change Password form (front-end only)
+        const pwNew = document.getElementById('pw-new');
+        const strengthMsg = document.getElementById('pw-new-strength');
+
+        if (pwNew && strengthMsg) {
+            function countPolicyRequirements(pw) {
+                const hasLower = /[a-z]/.test(pw);
+                const hasUpper = /[A-Z]/.test(pw);
+                const hasDigit = /[0-9]/.test(pw);
+                const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
+                const has6 = pw.length >= 6;
+
+                let count = 0;
+                if (has6) count++;
+                if (hasLower) count++;
+                if (hasUpper) count++;
+                if (hasDigit) count++;
+                if (hasSpecial) count++;
+
+                return { count, total: 5 };
+            }
+
+            function setStrengthLabel(pw) {
+                if (!pw || pw.length === 0) {
+                    strengthMsg.style.display = 'none';
+                    return;
+                }
+
+                const { count, total } = countPolicyRequirements(pw);
+
+                if (count === 1) {
+                    strengthMsg.textContent = 'Weak password';
+                    strengthMsg.style.display = 'block';
+                    strengthMsg.style.color = '#991b1b';
+                } else if (count === total) {
+                    strengthMsg.textContent = 'Strong password';
+                    strengthMsg.style.display = 'block';
+                    strengthMsg.style.color = '#166534';
+                } else {
+                    strengthMsg.textContent = 'Moderate password';
+                    strengthMsg.style.display = 'block';
+                    strengthMsg.style.color = '#b45309';
+                }
+            }
+
+            // initial state
+            strengthMsg.style.display = 'none';
+            setStrengthLabel(pwNew.value || '');
+
+            pwNew.addEventListener('input', function () {
+                setStrengthLabel(this.value || '');
+            });
+        }
     })();
 </script>
 </body>

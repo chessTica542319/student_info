@@ -46,20 +46,9 @@ if (isset($_POST['login'])) {
         exit();
     }
 
-    // Keep default credentials
-    $valid_username = "admin";
-    $valid_password = "admin123";
-
-    if ($username === $valid_username && $password === $valid_password) {
-        $_SESSION['logged_in'] = true;
-        $_SESSION['username'] = $username;
-        $_SESSION['created'] = time();
-        header("Location: index.php");
-        exit();
-    }
-
-    // Otherwise verify against DB
+    // Verify against DB only (no hardcoded credentials)
     $conn = new mysqli($host, $db_user, $db_pass, $database);
+
     $conn->set_charset('utf8mb4');
 
     $stmt = $conn->prepare("SELECT hashpassword FROM userAccount WHERE username = ? LIMIT 1");
@@ -219,7 +208,16 @@ if (isset($_POST['login'])) {
         .popup { padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; font-weight: 700; }
         .popup.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         .popup.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        
+
+        .weak-msg {
+            margin-top: 10px;
+            text-align: center;
+            color: #991b1b;
+            font-weight: 800;
+            font-size: 13px;
+            display: none;
+        }
+
         #login_toggle { transition: opacity 0.2s ease; }
     </style>
 </head>
@@ -248,9 +246,12 @@ if (isset($_POST['login'])) {
                     <span id="login_toggle" style="position: absolute; right: 16px; top: 40px; cursor: pointer; color:#a0aec0; user-select:none; font-weight:900;">👁️</span>
                 </div>
 
+                <div id="loginPasswordStrengthMsg" class="weak-msg">Weak password</div>
 
                 <button type="submit" name="login">Login</button>
-                <div class="hint">default admin  admin123</div>
+                <div class="hint"> </div>
+
+
                 <div class="form-footer">Dont have an account then <a href="register.php">Register</a></div>
             </form>
         </div>
@@ -261,11 +262,61 @@ if (isset($_POST['login'])) {
         (function () {
             const toggle = document.getElementById('login_toggle');
             const input = document.getElementById('login_password');
-            if (!toggle || !input) return;
+            const strengthMsg = document.getElementById('loginPasswordStrengthMsg');
 
-            toggle.addEventListener('click', function () {
-                const isPassword = input.type === 'password';
-                input.type = isPassword ? 'text' : 'password';
+            if (!input) return;
+
+            function countPolicyRequirements(pw) {
+                const has6 = pw.length >= 6;
+                const hasLower = /[a-z]/.test(pw);
+                const hasUpper = /[A-Z]/.test(pw);
+                const hasDigit = /[0-9]/.test(pw);
+                const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
+
+                let count = 0;
+                if (has6) count++;
+                if (hasLower) count++;
+                if (hasUpper) count++;
+                if (hasDigit) count++;
+                if (hasSpecial) count++;
+                return { count, total: 5 };
+            }
+
+            function setStrengthLabel(pw) {
+                if (!strengthMsg) return;
+
+                if (!pw || pw.length === 0) {
+                    strengthMsg.style.display = 'none';
+                    return;
+                }
+
+                const { count, total } = countPolicyRequirements(pw);
+                if (count === 1) {
+                    strengthMsg.textContent = 'Weak password';
+                    strengthMsg.style.display = 'block';
+                    strengthMsg.style.color = '#991b1b';
+                } else if (count === total) {
+                    strengthMsg.textContent = 'Strong password';
+                    strengthMsg.style.display = 'block';
+                    strengthMsg.style.color = '#166534';
+                } else {
+                    strengthMsg.textContent = 'Moderate password';
+                    strengthMsg.style.display = 'block';
+                    strengthMsg.style.color = '#b45309';
+                }
+            }
+
+            // eye toggle
+            if (toggle) {
+                toggle.addEventListener('click', function () {
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                });
+            }
+
+            // strength indicator
+            input.addEventListener('input', function () {
+                setStrengthLabel(this.value || '');
             });
         })();
     </script>

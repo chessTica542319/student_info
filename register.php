@@ -240,13 +240,21 @@ if (isset($_POST['register'])) {
     </div>
 
     <script>
-        function matchesPolicy(pw) {
+        function countPolicyRequirements(pw) {
             const has6 = pw.length >= 6;
             const hasLower = /[a-z]/.test(pw);
             const hasUpper = /[A-Z]/.test(pw);
             const hasDigit = /[0-9]/.test(pw);
             const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
-            return has6 && hasLower && hasUpper && hasDigit && hasSpecial;
+
+            let count = 0;
+            if (has6) count++;
+            if (hasLower) count++;
+            if (hasUpper) count++;
+            if (hasDigit) count++;
+            if (hasSpecial) count++;
+
+            return { count, total: 5 };
         }
 
         const regPasswordField = document.getElementById('reg_password');
@@ -255,8 +263,27 @@ if (isset($_POST['register'])) {
         if (regPasswordField && weakMsg) {
             regPasswordField.addEventListener('input', function () {
                 const pw = this.value || '';
-                const isWeak = pw.length > 0 && !matchesPolicy(pw);
-                weakMsg.style.display = isWeak ? 'block' : 'none';
+
+                if (!pw || pw.length === 0) {
+                    weakMsg.style.display = 'none';
+                    return;
+                }
+
+                const { count, total } = countPolicyRequirements(pw);
+
+                if (count === 1) {
+                    weakMsg.textContent = 'Weak password';
+                    weakMsg.style.display = 'block';
+                    weakMsg.style.color = '#991b1b';
+                } else if (count === total) {
+                    weakMsg.textContent = 'Strong password';
+                    weakMsg.style.display = 'block';
+                    weakMsg.style.color = '#166534';
+                } else {
+                    weakMsg.textContent = 'Moderate password';
+                    weakMsg.style.display = 'block';
+                    weakMsg.style.color = '#b45309';
+                }
             });
         }
         (function () {
