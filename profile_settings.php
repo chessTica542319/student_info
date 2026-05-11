@@ -406,7 +406,8 @@ if (isset($_POST['delete_account'])) {
                 </div>
 
                 <div style="grid-column: 1 / -1;">
-                    <form method="POST" action="profile_settings.php" style="border-top: 1px solid #e2e8f0; margin-top: 10px;">
+                    <form id="delete_account_form" method="POST" action="profile_settings.php" style="border-top: 1px solid #e2e8f0; margin-top: 10px;">
+
                         <input type="hidden" name="delete_account" value="1">
 
                         <div class="form-group" style="margin-top: 20px;">
@@ -436,8 +437,12 @@ if (isset($_POST['delete_account'])) {
                         </div>
 
                         <div class="actions" style="margin-top: 8px;">
-                            <button type="submit" id="delete_submit">Delete Account</button>
+                            <button type="button" id="delete_submit" onclick="return promptDeleteConfirm();" style="background:#ef4444; color:#ffffff; border:none; border-radius:8px; padding:14px 24px; font-weight:700; cursor:pointer;">
+                                Delete Account
+                            </button>
+
                         </div>
+
 
                         <div class="hint">
                             Warning: This will permanently remove your account and sign you out immediately.
@@ -445,6 +450,30 @@ if (isset($_POST['delete_account'])) {
 
 
                         <script>
+                            function promptDeleteConfirm() {
+                                // OK: continue to deletion (step 2) and submit the form.
+                                // Cancel: restart verification (set step back to 1) and do not delete.
+                                const stepInput = document.getElementById('delete_step_input');
+                                const form = document.getElementById('delete_account_form');
+
+                                // If user cancels, restart process.
+                                const ok = confirm('Are you sure you want to delete your account permanently?\n\nOK = delete account\nCancel = stop and restart');
+                                if (!ok) {
+                                    if (stepInput) stepInput.value = '1';
+                                    return false;
+                                }
+
+                                // Ensure step 2 when user confirms.
+                                if (stepInput) stepInput.value = '2';
+
+                                if (form) {
+                                    form.submit();
+                                    return false;
+                                }
+
+                                return true;
+                            }
+
                             (function(){
                                 const successText = <?php echo json_encode($success); ?>;
                                 const btn = document.getElementById('delete_submit');
@@ -457,6 +486,7 @@ if (isset($_POST['delete_account'])) {
                                 }
                             })();
                         </script>
+
                     </form>
                 </div>
 
