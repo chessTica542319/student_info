@@ -158,7 +158,9 @@ body { background: #f0fdf4; font-family: 'Segoe UI', Tahoma, sans-serif; min-hei
         <a href="add_student.php" class="nav-link active">Add Student</a>
         <a href="honor_students.php" class="nav-link">Honor Students</a>
         <a href="fail_students.php" class="nav-link">Failed Students</a>
+        <a href="profile_settings.php" class="nav-link">Profile Settings</a>
         <a href="logout.php" class="nav-link" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+
     </div>
 
     <!-- Main Content -->

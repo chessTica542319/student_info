@@ -340,6 +340,16 @@ body {
             background: #dc2626;
         }
 
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 30px;
+        }
+
+
         /* Pie Chart */
         .chart-container {
             display: flex;
@@ -390,6 +400,7 @@ body {
         .legend-dot.female { background: #22c55e; }
             margin-top: 30px;
         }
+
     </style>
 </head>
 <body>
@@ -444,14 +455,15 @@ body {
                     <div class="pie-legend">
                         <div class="legend-item">
                             <span class="legend-dot fail"></span>
-                            <span>Fail</span>
-                            <span class="legend-value"><?php echo $fail_pct; ?>%</span>
+                            <span>Fail: <?php echo $fail_count; ?></span>
+                            <span class="legend-value">(<?php echo $fail_pct; ?>%)</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-dot pass"></span>
-                            <span>Pass</span>
-                            <span class="legend-value"><?php echo $pass_pct; ?>%</span>
+                            <span>Pass: <?php echo $pass_count; ?></span>
+                            <span class="legend-value">(<?php echo $pass_pct; ?>%)</span>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -462,14 +474,15 @@ body {
                     <div class="pie-legend">
                         <div class="legend-item">
                             <span class="legend-dot male"></span>
-                            <span>Male</span>
-                            <span class="legend-value"><?php echo $male_pct; ?>%</span>
+                            <span>Male: <?php echo $male_count; ?></span>
+                            <span class="legend-value">(<?php echo $male_pct; ?>%)</span>
                         </div>
                         <div class="legend-item">
                             <span class="legend-dot female"></span>
-                            <span>Female</span>
-                            <span class="legend-value"><?php echo $female_pct; ?>%</span>
+                            <span>Female: <?php echo $female_count; ?></span>
+                            <span class="legend-value">(<?php echo $female_pct; ?>%)</span>
                         </div>
+
                     </div>
                 </div>
             </div>
