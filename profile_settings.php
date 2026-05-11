@@ -1,4 +1,4 @@
-n<?php
+<?php
 include 'auth.php';
 include 'db.php';
 
@@ -440,8 +440,9 @@ if (isset($_POST['delete_account'])) {
                         </div>
 
                         <div class="hint">
-                            Warning: This deletes your row from <b>userAccount</b> and logs you out.
+                            Warning: This will permanently remove your account and sign you out immediately.
                         </div>
+
 
                         <script>
                             (function(){
