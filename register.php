@@ -1,19 +1,11 @@
 <?php
-// Login page with default hardcoded credentials + DB registration/login
 // Start fresh session - destroy any existing one first
 if (session_status() === PHP_SESSION_ACTIVE) {
     session_destroy();
 }
 session_start();
 
-// Clear any existing session data completely
 $_SESSION = array();
-
-// If already logged in, redirect to index
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-    header("Location: index.php");
-    exit();
-}
 
 $error = "";
 $success = "";
@@ -27,7 +19,7 @@ function sha256_hash($value) {
     return hash('sha256', $value);
 }
 
-function validate_password_policy($password) {
+        function validate_password_policy($password) {
     if (strlen($password) < 6) return false;
     $hasLower = (bool)preg_match('/[a-z]/', $password);
     $hasUpper = (bool)preg_match('/[A-Z]/', $password);
@@ -36,57 +28,49 @@ function validate_password_policy($password) {
     return $hasLower && $hasUpper && $hasDigit && $hasSpecial;
 }
 
-// Handle login only
-if (isset($_POST['login'])) {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+if (isset($_POST['register'])) {
 
-    if ($username === '' || strlen($username) < 3 || $password === '') {
-        $error = "<div class='popup error'>Access Denied: Invalid credentials</div>";
-        exit();
-    }
+    $reg_username = trim($_POST['reg_username'] ?? '');
+    $reg_password = $_POST['reg_password'] ?? '';
 
-    // Keep default credentials
-    $valid_username = "admin";
-    $valid_password = "admin123";
+    if ($reg_username === '' || $reg_password === '') {
+        $error = "<div class='popup error'>Error: Username and password are required.</div>";
+    } else if (strlen($reg_username) < 3) {
+        $error = "<div class='popup error'>Error: Username must be at least 3 characters.</div>";
+    } else if (!validate_password_policy($reg_password)) {
+        $error = "<div class='popup error'>Error: Password is weak.</div>";
+    } else {
+        $conn = new mysqli($host, $db_user, $db_pass, $database);
+        $conn->set_charset('utf8mb4');
 
-    if ($username === $valid_username && $password === $valid_password) {
-        $_SESSION['logged_in'] = true;
-        $_SESSION['username'] = $username;
-        $_SESSION['created'] = time();
-        header("Location: index.php");
-        exit();
-    }
+        $check = $conn->prepare("SELECT accID FROM userAccount WHERE username = ? LIMIT 1");
+        $check->bind_param("s", $reg_username);
+        $check->execute();
+        $res = $check->get_result();
 
-    // Otherwise verify against DB
-    $conn = new mysqli($host, $db_user, $db_pass, $database);
-    $conn->set_charset('utf8mb4');
-
-    $stmt = $conn->prepare("SELECT hashpassword FROM userAccount WHERE username = ? LIMIT 1");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
-    if ($result && $result->num_rows === 1) {
-        $row = $result->fetch_assoc();
-        $stored = $row['hashpassword'];
-        $incoming = sha256_hash($password);
-
-        if (hash_equals($stored, $incoming)) {
-            $_SESSION['logged_in'] = true;
-            $_SESSION['username'] = $username;
-            $_SESSION['created'] = time();
-            $stmt->close();
+        if ($res && $res->num_rows > 0) {
+            $error = "<div class='popup error'>Error: Username already exists.</div>";
+            $check->close();
             $conn->close();
-            header("Location: index.php");
-            exit();
+        } else {
+            $hash = sha256_hash($reg_password);
+            $ins = $conn->prepare("INSERT INTO userAccount (username, hashpassword) VALUES (?, ?)");
+            $ins->bind_param("ss", $reg_username, $hash);
+
+                if ($ins->execute()) {
+                // After successful registration, go to login page so the user can sign in.
+                header("Location: login.php");
+                exit();
+            } else {
+                $error = "<div class='popup error'>Error: Registration failed.</div>";
+            }
+
+
+            $ins->close();
+            $check->close();
+            $conn->close();
         }
     }
-
-    $stmt->close();
-    $conn->close();
-
-    $error = "<div class='popup error'>Access Denied: Invalid credentials</div>";
 }
 ?>
 
@@ -95,7 +79,7 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
+    <title>Register</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -135,13 +119,10 @@ if (isset($_POST['login'])) {
             margin: 0;
         }
 
-        .login-header p {
-            color: rgba(255,255,255,0.85);
-            margin-top: 8px;
-            font-size: 14px;
-        }
+            form { padding: 28px; }
+        
+        a { cursor: pointer; }
 
-        form { padding: 28px; }
 
         .form-group { margin-bottom: 18px; }
 
@@ -187,11 +168,13 @@ if (isset($_POST['login'])) {
 
         button[type="submit"]:hover { transform: translateY(-1px); }
 
-        .hint {
-            margin-top: 14px;
+        .weak-msg {
+            margin-top: 10px;
             text-align: center;
-            color: #64748b;
+            color: #991b1b;
+            font-weight: 800;
             font-size: 13px;
+            display: none;
         }
 
         .form-footer {
@@ -219,48 +202,66 @@ if (isset($_POST['login'])) {
         .popup { padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; font-weight: 700; }
         .popup.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         .popup.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        
-        #login_toggle { transition: opacity 0.2s ease; }
     </style>
 </head>
-
 <body>
     <div class="login-wrapper">
         <div class="login-card">
             <div class="login-header">
-                <h2>Login to your account</h2>
+                <h2>Register to your account</h2>
 
-                <p>Enter your username and password to continue.</p>
             </div>
 
-            <?php echo $success; ?>
-            <?php echo $error; ?>
+            <form method="POST" action="register.php" id="registerForm">
+                <?php echo $success; ?>
+                <?php echo $error; ?>
 
-            <form method="POST" action="login.php">
                 <div class="form-group">
                     <label>username</label>
-                    <input type="text" name="username" placeholder="Enter username" required>
+                    <input type="text" name="reg_username" placeholder="Enter username" required>
                 </div>
 
                 <div class="form-group" style="position: relative;">
                     <label>password</label>
-                    <input type="password" name="password" placeholder="Enter password" required id="login_password">
-                    <span id="login_toggle" style="position: absolute; right: 16px; top: 40px; cursor: pointer; color:#a0aec0; user-select:none; font-weight:900;">👁️</span>
+                    <input type="password" name="reg_password" placeholder="Enter password" id="reg_password" required>
+                    <span id="register_toggle" style="position: absolute; right: 16px; top: 40px; cursor: pointer; color:#a0aec0; user-select:none; font-weight:900;">👁️</span>
                 </div>
 
 
-                <button type="submit" name="login">Login</button>
-                <div class="hint">default admin  admin123</div>
-                <div class="form-footer">Dont have an account then <a href="register.php">Register</a></div>
+                <div id="weakPasswordMsg" class="weak-msg">Weak password</div>
+
+                <button type="submit" name="register">Register</button>
+
+                <div class="form-footer">Already have an accout and <a href="login.php">Login</a></div>
             </form>
         </div>
 
         <div class="footer">&copy; <?php echo date('Y'); ?> @ RudaDev. All Right Reserved.</div>
     </div>
+
     <script>
+        function matchesPolicy(pw) {
+            const has6 = pw.length >= 6;
+            const hasLower = /[a-z]/.test(pw);
+            const hasUpper = /[A-Z]/.test(pw);
+            const hasDigit = /[0-9]/.test(pw);
+            const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
+            return has6 && hasLower && hasUpper && hasDigit && hasSpecial;
+        }
+
+        const regPasswordField = document.getElementById('reg_password');
+        const weakMsg = document.getElementById('weakPasswordMsg');
+
+        if (regPasswordField && weakMsg) {
+            regPasswordField.addEventListener('input', function () {
+                const pw = this.value || '';
+                const isWeak = pw.length > 0 && !matchesPolicy(pw);
+                weakMsg.style.display = isWeak ? 'block' : 'none';
+            });
+        }
         (function () {
-            const toggle = document.getElementById('login_toggle');
-            const input = document.getElementById('login_password');
+            const toggle = document.getElementById('register_toggle');
+            const input = document.getElementById('reg_password');
             if (!toggle || !input) return;
 
             toggle.addEventListener('click', function () {
