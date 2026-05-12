@@ -4,14 +4,26 @@ include 'auth.php';
 include 'db.php';
 
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$gender = isset($_GET['gender']) ? $_GET['gender'] : '';
+$gender = in_array($gender, ['M','F'], true) ? $gender : '';
+
 $sql = "SELECT id, f_name, m_name, l_name, gender, birthday, address, gwa, course FROM student";
+
+if ($gender) {
+    // gender filter applies together with search (when search exists)
+    $sql .= " WHERE gender = ?";
+}
 if ($search) {
     $search_param = '%' . $search . '%';
     $search_words = array_filter(preg_split('/\s+/', $search), function($word) {
         return $word !== '';
     });
 
-    $sql .= " WHERE (LOWER(f_name) LIKE LOWER(?) "
+    // If gender filter is active, append search using AND.
+    // Otherwise, start a new WHERE clause.
+    $wherePrefix = $gender ? ' AND ' : ' WHERE ';
+
+    $sql .= $wherePrefix . "(LOWER(f_name) LIKE LOWER(?) "
           . "OR LOWER(m_name) LIKE LOWER(?) "
           . "OR LOWER(l_name) LIKE LOWER(?) "
           . "OR LOWER(CONCAT_WS(' ', f_name, m_name)) LIKE LOWER(?) "
@@ -42,15 +54,32 @@ $fail_sql = "SELECT id, f_name, m_name, l_name, gender, gwa FROM student WHERE g
 $fail_result = $conn->query($fail_sql);
 
 try {
-    if ($search) {
+    // gender filter may be active even if search is empty
+    if ($search || $gender) {
         $stmt = $conn->prepare($sql);
 
-        $params = array_fill(0, 11, $search_param);
-        if (count($search_words) > 1) {
-            foreach ($search_words as $word) {
-                $params[] = '%' . $word . '%';
-                $params[] = '%' . $word . '%';
-                $params[] = '%' . $word . '%';
+        $params = [];
+
+        if ($gender) {
+            // first placeholder is gender in: WHERE gender = ?
+            $params[] = $gender;
+        }
+
+        if ($search) {
+            $search_param = '%' . $search . '%';
+            $search_words = array_filter(preg_split('/\s+/', $search), function($word) {
+                return $word !== '';
+            });
+
+            // 11 placeholders inside the search block
+            $params = array_merge($params, array_fill(0, 11, $search_param));
+
+            if (count($search_words) > 1) {
+                foreach ($search_words as $word) {
+                    $params[] = '%' . $word . '%';
+                    $params[] = '%' . $word . '%';
+                    $params[] = '%' . $word . '%';
+                }
             }
         }
 
@@ -67,6 +96,7 @@ try {
     } else {
         $result = $conn->query($sql);
     }
+
     
     // Get gender counts for pie chart
     $male_count = 0;
@@ -295,16 +325,38 @@ try {
                 <div class="chart-container">
                     <div class="gender-pie-chart"></div>
                     <div class="pie-legend">
-                        <div class="legend-item">
-                            <span class="legend-dot male"></span>
-                            <span>Male: <?php echo $male_count; ?></span>
-                            <span class="legend-value">(<?php echo $male_pct; ?>%)</span>
+                        <?php
+                            $qs = [];
+                            if ($search) { $qs['search'] = $search; }
+                            $baseQuery = http_build_query($qs);
+                            $maleLink = 'dashboard.php?gender=M' . ($baseQuery ? ('&' . $baseQuery) : '');
+                            $femaleLink = 'dashboard.php?gender=F' . ($baseQuery ? ('&' . $baseQuery) : '');
+                            $showAllLink = 'dashboard.php' . ($baseQuery ? ('?' . $baseQuery) : '');
+                        ?>
+
+                        <div class="legend-item" style="cursor:pointer;">
+                            <a href="<?php echo htmlspecialchars($maleLink); ?>" style="text-decoration:none; color: inherit; display:flex; align-items:center; gap:8px;">
+                                <span class="legend-dot male"></span>
+                                <span><?php echo ($gender === 'M') ? '<strong>Male</strong>' : 'Male'; ?>: <?php echo $male_count; ?></span>
+                                <span class="legend-value">(<?php echo $male_pct; ?>%)</span>
+                            </a>
                         </div>
-                        <div class="legend-item">
-                            <span class="legend-dot female"></span>
-                            <span>Female: <?php echo $female_count; ?></span>
-                            <span class="legend-value">(<?php echo $female_pct; ?>%)</span>
+
+                        <div class="legend-item" style="cursor:pointer; margin-top:8px;">
+                            <a href="<?php echo htmlspecialchars($femaleLink); ?>" style="text-decoration:none; color: inherit; display:flex; align-items:center; gap:8px;">
+                                <span class="legend-dot female"></span>
+                                <span><?php echo ($gender === 'F') ? '<strong>Female</strong>' : 'Female'; ?>: <?php echo $female_count; ?></span>
+                                <span class="legend-value">(<?php echo $female_pct; ?>%)</span>
+                            </a>
                         </div>
+
+                        <?php if ($gender) { ?>
+                            <div style="margin-top:12px;">
+                                <a href="<?php echo htmlspecialchars($showAllLink); ?>" style="display:inline-block; padding:8px 12px; background:#6b7280; color:white; text-decoration:none; border-radius:8px; font-weight:600;">
+                                    Show All
+                                </a>
+                            </div>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
