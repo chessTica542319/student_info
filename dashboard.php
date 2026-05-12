@@ -377,6 +377,14 @@ try {
         <div class="footer">
             &copy; <?php echo date('Y'); ?> @ RudaDev. All Right Reserved.
         </div>
+
+        <div style="position: fixed; right: 22px; bottom: 22px; z-index: 9999;">
+            <button id="backToTopBtn" type="button" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border: none; border-radius: 999px; cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; font-weight: 800; box-shadow: 0 8px 30px rgba(34, 197, 94, 0.25);">
+                <i class="fas fa-arrow-up"></i>
+                Back to top
+            </button>
+        </div>
+
     </div>
 
     <script>
@@ -384,6 +392,16 @@ try {
             const mainScroll = document.getElementById('mainScroll');
             const stickyScroll = document.getElementById('stickyScroll');
             const stickyDummy = document.getElementById('stickyDummy');
+
+            // Back to top (page scroll only, no reload)
+            const backToTopBtn = document.getElementById('backToTopBtn');
+            if (backToTopBtn) {
+                backToTopBtn.addEventListener('click', function() {
+                    // Smooth scroll to the top of the page
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
 
             // Set dummy width to table width, toggle display if scrolling needed
             function syncWidths() {

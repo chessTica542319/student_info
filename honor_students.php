@@ -205,6 +205,13 @@ echo "<tr><td>".$row['id']."</td><td>".$row['f_name']."</td><td>".$row['m_name']
         <div class="footer">© <?php echo date('Y');?> @ RudaDev. All Right Reserved.</div>
     </div>
 
+    <div style="position: fixed; right: 22px; bottom: 22px; z-index: 9999;">
+        <button id="backToTopBtn" type="button" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border: none; border-radius: 999px; cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; font-weight: 800; box-shadow: 0 8px 30px rgba(34, 197, 94, 0.25);">
+            <i class="fas fa-arrow-up"></i>
+            Back to top
+        </button>
+    </div>
+
     <div id="certModal" class="cert-modal">
         <div class="modal-content">
             <span class="close" onclick="hideCert()">&times;</span>
@@ -383,6 +390,14 @@ const honorText = certData.gwa >= 96 ? 'WITH HIGH HONOR' : 'WITH HONOR';
                 preview.innerHTML = '<div class="loading">Export failed - try again</div>';
                 console.error('Export error:', err);
             }
+        }
+
+        // Back to top button (page scroll only, no reload)
+        const backToTopBtn = document.getElementById('backToTopBtn');
+        if (backToTopBtn) {
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
         }
 
         window.onclick = function(e){
